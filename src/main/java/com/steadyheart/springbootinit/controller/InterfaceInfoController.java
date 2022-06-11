@@ -5,21 +5,22 @@ import java.util.Date;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.Gson;
 import com.steadyheart.springbootinit.annotation.AuthCheck;
-import com.steadyheart.springbootinit.common.BaseResponse;
-import com.steadyheart.springbootinit.common.DeleteRequest;
-import com.steadyheart.springbootinit.common.ErrorCode;
-import com.steadyheart.springbootinit.common.ResultUtils;
+import com.steadyheart.springbootinit.common.*;
 import com.steadyheart.springbootinit.constant.UserConstant;
 import com.steadyheart.springbootinit.exception.BusinessException;
 import com.steadyheart.springbootinit.exception.ThrowUtils;
 import com.steadyheart.springbootinit.model.dto.interfaceInfo.InterfaceInfoAddRequest;
+import com.steadyheart.springbootinit.model.dto.interfaceInfo.InterfaceInfoInvokeRequest;
 import com.steadyheart.springbootinit.model.dto.interfaceInfo.InterfaceInfoQueryRequest;
 import com.steadyheart.springbootinit.model.dto.interfaceInfo.InterfaceInfoUpdateRequest;
 import com.steadyheart.springbootinit.model.entity.InterfaceInfo;
 import com.steadyheart.springbootinit.model.entity.User;
+import com.steadyheart.springbootinit.model.enums.InterfaceInfoEnum;
 import com.steadyheart.springbootinit.service.InterfaceInfoService;
 import com.steadyheart.springbootinit.service.UserService;
+import com.steadyheart.steadyheartsdk.client.SteadyheartClient;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,8 +31,8 @@ import java.util.List;
 /**
  * 帖子接口
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
+ * @author lts
+ *
  */
 @RestController
 @RequestMapping("/interfaceInfo")
@@ -43,6 +44,9 @@ public class InterfaceInfoController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private SteadyheartClient steadyheartClient;
 
     private final static Gson GSON = new Gson();
 
@@ -117,6 +121,96 @@ public class InterfaceInfoController {
         ThrowUtils.throwIf(oldInterfaceInfo == null, ErrorCode.NOT_FOUND_ERROR);
         boolean result = interfaceInfoService.updateById(interfaceInfo);
         return ResultUtils.success(result);
+    }
+
+    /**
+     * 发布接口（仅管理员）
+     *
+     * @param idRequest
+     * @return
+     */
+    @PostMapping("/online")
+    @AuthCheck(mustRole = "admin")
+    public BaseResponse<Boolean> onlineInterfaceInfo(@RequestBody IdRequest idRequest) {
+        //  判断id是否合法
+        if (idRequest == null || idRequest.getId() == null || idRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"接口id错误");
+        }
+        //  校验接口是否存在
+        Long id = idRequest.getId();
+        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        ThrowUtils.throwIf(oldInterfaceInfo == null,ErrorCode.PARAMS_ERROR,"接口id不存在");
+        //  判断接口是否可以调用
+        com.steadyheart.steadyheartsdk.entity.User user = new com.steadyheart.steadyheartsdk.entity.User("test");
+        String name = steadyheartClient.getNameByPost(user);
+        if (StringUtils.isBlank(name)) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"接口验证失败");
+        }
+        InterfaceInfo interfaceInfo = new InterfaceInfo();
+        interfaceInfo.setId(id);
+        interfaceInfo.setStatus(InterfaceInfoEnum.ONLINE.getValue());
+        boolean result = interfaceInfoService.updateById(interfaceInfo);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 关闭接口（仅管理员）
+     *
+     * @param idRequest
+     * @return
+     */
+    @PostMapping("/offline")
+    @AuthCheck(mustRole = "admin")
+    public BaseResponse<Boolean> offlineInterfaceInfo(@RequestBody IdRequest idRequest) {
+        //  判断id是否合法
+        if (idRequest == null || idRequest.getId() == null || idRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"接口id错误");
+        }
+        //  校验接口是否存在
+        Long id = idRequest.getId();
+        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        ThrowUtils.throwIf(oldInterfaceInfo == null,ErrorCode.PARAMS_ERROR,"接口id不存在");
+        InterfaceInfo interfaceInfo = new InterfaceInfo();
+        interfaceInfo.setId(id);
+        interfaceInfo.setStatus(InterfaceInfoEnum.OFFLINE.getValue());
+        boolean result = interfaceInfoService.updateById(interfaceInfo);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 在线调用接口
+     *
+     * @param interfaceInfoInvokeRequest
+     * @return
+     */
+    @PostMapping("/invoke")
+    public BaseResponse<Object> invokeInterfaceInfo(@RequestBody InterfaceInfoInvokeRequest interfaceInfoInvokeRequest,HttpServletRequest request) {
+        if (interfaceInfoInvokeRequest == null || interfaceInfoInvokeRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        long id = interfaceInfoInvokeRequest.getId();
+        String userRequestParams = interfaceInfoInvokeRequest.getUserRequestParams();
+        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        if (oldInterfaceInfo == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        if (oldInterfaceInfo.getStatus().equals(InterfaceInfoEnum.OFFLINE.getValue())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "接口已关闭");
+        }
+        // 获取当前登录用户的ak和sk，这样相当于用户自己的这个身份去调用，
+        // 也不会担心它刷接口，因为知道是谁刷了这个接口，会比较安全
+        User loginUser = userService.getLoginUser(request);
+        String accessKey = loginUser.getAccessKey();
+        String secretKey = loginUser.getSecretKey();
+        // 我们只需要进行测试调用，所以我们需要解析传递过来的参数。
+        Gson gson = new Gson();
+        // 将用户请求参数转换为com.yupi.yuapiclientsdk.model.User对象
+        com.steadyheart.steadyheartsdk.entity.User user = gson.fromJson(userRequestParams, com.steadyheart.steadyheartsdk.entity.User.class);
+        // 调用SteadyheartClient的getUsernameByPost方法，传入用户对象，获取用户名
+        SteadyheartClient temp = new SteadyheartClient(accessKey,secretKey);
+        String usernameByPost = temp.getNameByPost(user);
+        // 返回成功响应，并包含调用结果
+        return ResultUtils.success(usernameByPost);
     }
 
     /**

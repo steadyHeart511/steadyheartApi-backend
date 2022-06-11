@@ -1,26 +1,28 @@
 package com.steadyheart.springbootinit.model.enums;
 
+import org.apache.commons.lang3.ObjectUtils;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.ObjectUtils;
 
 /**
- * 文件上传业务类型枚举
+ * 接口信息枚举
  *
  * @author lts
- * 
+ *
  */
-public enum FileUploadBizEnum {
+public enum InterfaceInfoEnum {
 
-    USER_AVATAR("用户头像", "user_avatar");
+    OFFLINE("关闭", 0),
+    ONLINE("开启", 1);
 
-    private final String text;
+    private final String status;
 
-    private final String value;
+    private final Integer value;
 
-    FileUploadBizEnum(String text, String value) {
-        this.text = text;
+    InterfaceInfoEnum(String status, Integer value) {
+        this.status = status;
         this.value = value;
     }
 
@@ -29,7 +31,7 @@ public enum FileUploadBizEnum {
      *
      * @return
      */
-    public static List<String> getValues() {
+    public static List<Integer> getValues() {
         return Arrays.stream(values()).map(item -> item.value).collect(Collectors.toList());
     }
 
@@ -39,11 +41,11 @@ public enum FileUploadBizEnum {
      * @param value
      * @return
      */
-    public static FileUploadBizEnum getEnumByValue(String value) {
+    public static InterfaceInfoEnum getEnumByValue(String value) {
         if (ObjectUtils.isEmpty(value)) {
             return null;
         }
-        for (FileUploadBizEnum anEnum : FileUploadBizEnum.values()) {
+        for (InterfaceInfoEnum anEnum : InterfaceInfoEnum.values()) {
             if (anEnum.value.equals(value)) {
                 return anEnum;
             }
@@ -51,11 +53,11 @@ public enum FileUploadBizEnum {
         return null;
     }
 
-    public String getValue() {
+    public Integer getValue() {
         return value;
     }
 
-    public String getText() {
-        return text;
+    public String getstatus() {
+        return status;
     }
 }

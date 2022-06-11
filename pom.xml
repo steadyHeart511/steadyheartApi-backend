@@ -18,6 +18,12 @@
         <java.version>1.8</java.version>
     </properties>
     <dependencies>
+        <!--  自己开发的sdk      -->
+        <dependency>
+            <groupId>com.steadyheart</groupId>
+            <artifactId>steadyheart-sdk</artifactId>
+            <version>1.0.3</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-freemarker</artifactId>
