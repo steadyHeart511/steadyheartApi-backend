@@ -32,13 +32,13 @@ public class SteadyheartClient {
         map.put("body",body);
         map.put("sign", SignUtils.sign(secretKey,body));
         map.put("nonce","1000");
-        map.put("timestamp",String.valueOf(LocalDateTime.now()));
+        map.put("timestamp",String.valueOf(System.currentTimeMillis()));
         return map;
     }
 
     public String getNameByPost (User user) {
         String json = JSONUtil.toJsonStr(user);
-        HttpResponse response = HttpRequest.post("http://localhost:8083/name/user")
+        HttpResponse response = HttpRequest.post("http://localhost:9090/api/name/user")
                 .addHeaders(headMap(json))
                 .body(json)
                 .execute();

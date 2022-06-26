@@ -1,6 +1,14 @@
 # 公共配置文件
 # @author lts
 #
+dubbo:
+  application:
+    name: dubbo-springboot-provider
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    address: nacos://localhost:8848
 spring:
   application:
     name: springboot-init

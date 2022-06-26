@@ -19,29 +19,6 @@ public class NameController {
 
     @PostMapping("/user")
     public String getUserByPost(@RequestBody User user, HttpServletRequest request) {
-        String accessKey = request.getHeader("accessKey");
-        String body = request.getHeader("body");
-        String sign = request.getHeader("sign");
-        String nonce = request.getHeader("nonce");
-        String timestamp = request.getHeader("timestamp");
-
-        //  todo 这里是手动判断，需要从数据库中去查
-        if (!"lts".equals(accessKey)) {
-            throw new RuntimeException("accessKey not found");
-        }
-
-        //  todo 需要自己写逻辑
-        if (Integer.valueOf(nonce) > 10000) {
-            throw new RuntimeException("用过了");
-        }
-
-//        todo 需要自己写逻辑
-//        if (timestamp) {
-//
-//        }
-        if (!SignUtils.sign("xx",body).equals(sign)) {
-            throw new RuntimeException("信息错误");
-        }
         return user.getName();
     }
 }
