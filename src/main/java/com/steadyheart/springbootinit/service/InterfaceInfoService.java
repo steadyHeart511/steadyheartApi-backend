@@ -1,12 +1,12 @@
 package com.steadyheart.springbootinit.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.steadyheart.springbootinit.model.dto.interfaceInfo.InterfaceInfoQueryRequest;
-import com.steadyheart.springbootinit.model.entity.InterfaceInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.steadyheart.steadyheartcommon.model.entity.InterfaceInfo;
 
-import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
+import java.util.List;
 
 /**
 * @author lts
@@ -15,8 +15,10 @@ import javax.servlet.http.HttpServletRequest;
 */
 public interface InterfaceInfoService extends IService<InterfaceInfo> {
 
-    void validInterfaceInfo(InterfaceInfo interfaceInfo, boolean b);
+    void validInterfaceInfo(InterfaceInfo interfaceInfo, boolean add);
 
     QueryWrapper<InterfaceInfo> getQueryWrapper(InterfaceInfoQueryRequest interfaceInfoQueryRequest);
+
+    List<InterfaceInfo> getInterfaceInfo(Collection collection);
 
 }

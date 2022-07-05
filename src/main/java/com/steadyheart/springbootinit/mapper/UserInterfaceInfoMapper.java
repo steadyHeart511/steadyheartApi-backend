@@ -1,7 +1,10 @@
 package com.steadyheart.springbootinit.mapper;
 
-import com.steadyheart.springbootinit.model.entity.UserInterfaceInfo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.steadyheart.springbootinit.model.vo.InterfaceInfoVo;
+import com.steadyheart.steadyheartcommon.model.entity.UserInterfaceInfo;
+
+import java.util.List;
 
 /**
 * @author 李天帅
@@ -11,6 +14,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface UserInterfaceInfoMapper extends BaseMapper<UserInterfaceInfo> {
 
+    List<UserInterfaceInfo> getTopInvokeInterface(Integer num);
 }
 
 

@@ -2,20 +2,20 @@ package com.steadyheart.springbootinit.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.steadyheart.springbootinit.common.ErrorCode;
+import com.steadyheart.steadyheartcommon.service.common.ErrorCode;
 import com.steadyheart.springbootinit.constant.CommonConstant;
-import com.steadyheart.springbootinit.exception.BusinessException;
-import com.steadyheart.springbootinit.exception.ThrowUtils;
+import com.steadyheart.steadyheartcommon.exception.BusinessException;
+import com.steadyheart.steadyheartcommon.exception.ThrowUtils;
 import com.steadyheart.springbootinit.model.dto.userInterfaceInfo.UserInterfaceInfoQueryRequest;
-import com.steadyheart.springbootinit.model.entity.UserInterfaceInfo;
 import com.steadyheart.springbootinit.service.UserInterfaceInfoService;
 import com.steadyheart.springbootinit.mapper.UserInterfaceInfoMapper;
+import com.steadyheart.steadyheartcommon.model.entity.UserInterfaceInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
 
 /**
 * @author 李天帅
@@ -25,6 +25,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoMapper, UserInterfaceInfo>
     implements UserInterfaceInfoService{
+
+
+    @Resource
+    private UserInterfaceInfoServiceImpl2 userInterfaceInfoService2;
 
 
     /**
@@ -77,18 +81,13 @@ public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoM
      */
     @Override
     public boolean invokeCount(long userId, long interfaceInfoId) {
-        //  记录不存在，数据库记录修改也不会修改，因此没必要校验记录是否存在
+        //  校验
         if (userId <= 0 || interfaceInfoId <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        LambdaUpdateWrapper<UserInterfaceInfo> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(UserInterfaceInfo::getUserId,userId);
-        updateWrapper.eq(UserInterfaceInfo::getInterfaceId,interfaceInfoId);
-        //  判断接口的剩余次数是否大于0
-        updateWrapper.gt(UserInterfaceInfo::getLeftNum,0);
-        updateWrapper.setSql("totalNum = totalNum + 1,leftNum = leftNum - 1");
         //  接口调用次数不足，抛出异常
-        ThrowUtils.throwIf(!update(updateWrapper),ErrorCode.NOT_ENOUGH);
+        boolean result = userInterfaceInfoService2.updateUserInterface(userId,interfaceInfoId);
+        ThrowUtils.throwIf(!result,ErrorCode.NOT_ENOUGH);
         return true;
     }
 }

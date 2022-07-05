@@ -2,46 +2,41 @@ package com.steadyheart.springbootinit.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.steadyheart.springbootinit.annotation.AuthCheck;
-import com.steadyheart.springbootinit.common.BaseResponse;
 import com.steadyheart.springbootinit.common.DeleteRequest;
-import com.steadyheart.springbootinit.common.ErrorCode;
-import com.steadyheart.springbootinit.common.ResultUtils;
-import com.steadyheart.springbootinit.config.WxOpenConfig;
+import com.steadyheart.steadyheartcommon.service.common.BaseResponse;
+import com.steadyheart.steadyheartcommon.service.common.ErrorCode;
 import com.steadyheart.springbootinit.constant.UserConstant;
-import com.steadyheart.springbootinit.exception.BusinessException;
-import com.steadyheart.springbootinit.exception.ThrowUtils;
+import com.steadyheart.steadyheartcommon.service.common.ResultUtils;
+import com.steadyheart.steadyheartcommon.exception.BusinessException;
+import com.steadyheart.steadyheartcommon.exception.ThrowUtils;
 import com.steadyheart.springbootinit.model.dto.user.UserAddRequest;
 import com.steadyheart.springbootinit.model.dto.user.UserLoginRequest;
 import com.steadyheart.springbootinit.model.dto.user.UserQueryRequest;
 import com.steadyheart.springbootinit.model.dto.user.UserRegisterRequest;
 import com.steadyheart.springbootinit.model.dto.user.UserUpdateMyRequest;
 import com.steadyheart.springbootinit.model.dto.user.UserUpdateRequest;
-import com.steadyheart.springbootinit.model.entity.User;
 import com.steadyheart.springbootinit.model.vo.LoginUserVO;
 import com.steadyheart.springbootinit.model.vo.UserVO;
 import com.steadyheart.springbootinit.service.UserService;
 import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
+import com.steadyheart.steadyheartcommon.model.entity.User;
 import lombok.extern.slf4j.Slf4j;
-import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
-import me.chanjar.weixin.common.bean.oauth2.WxOAuth2AccessToken;
-import me.chanjar.weixin.mp.api.WxMpService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 用户接口
  *
  * @author lts
- * 
+ *
  */
 @RestController
 @RequestMapping("/user")
@@ -50,9 +45,6 @@ public class UserController {
 
     @Resource
     private UserService userService;
-
-    @Resource
-    private WxOpenConfig wxOpenConfig;
 
     // region 登录相关
 
@@ -63,6 +55,7 @@ public class UserController {
      * @return
      */
     @PostMapping("/register")
+    //todo 注册信息传入的不完整，还需要完善
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         if (userRegisterRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -98,28 +91,6 @@ public class UserController {
         return ResultUtils.success(loginUserVO);
     }
 
-    /**
-     * 用户登录（微信开放平台）
-     */
-    @GetMapping("/login/wx_open")
-    public BaseResponse<LoginUserVO> userLoginByWxOpen(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("code") String code) {
-        WxOAuth2AccessToken accessToken;
-        try {
-            WxMpService wxService = wxOpenConfig.getWxMpService();
-            accessToken = wxService.getOAuth2Service().getAccessToken(code);
-            WxOAuth2UserInfo userInfo = wxService.getOAuth2Service().getUserInfo(accessToken, code);
-            String unionId = userInfo.getUnionId();
-            String mpOpenId = userInfo.getOpenid();
-            if (StringUtils.isAnyBlank(unionId, mpOpenId)) {
-                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "登录失败，系统错误");
-            }
-            return ResultUtils.success(userService.userLoginByMpOpen(userInfo, request));
-        } catch (Exception e) {
-            log.error("userLoginByWxOpen error", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "登录失败，系统错误");
-        }
-    }
 
     /**
      * 用户注销
@@ -198,6 +169,7 @@ public class UserController {
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    //  todo 参数需要补全
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest,
             HttpServletRequest request) {
         if (userUpdateRequest == null || userUpdateRequest.getId() == null) {

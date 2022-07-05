@@ -1,7 +1,10 @@
 package com.steadyheart.springbootinit.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.steadyheart.springbootinit.model.entity.InterfaceInfo;
+import com.steadyheart.steadyheartcommon.model.entity.InterfaceInfo;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
 * @author lts
@@ -11,6 +14,7 @@ import com.steadyheart.springbootinit.model.entity.InterfaceInfo;
 */
 public interface InterfaceInfoMapper extends BaseMapper<InterfaceInfo> {
 
+    List<InterfaceInfo> getInterfaceInfo(Collection collection);
 }
 
 

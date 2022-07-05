@@ -2,8 +2,8 @@ package com.steadyheart.springbootinit.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.steadyheart.springbootinit.model.dto.userInterfaceInfo.UserInterfaceInfoQueryRequest;
-import com.steadyheart.springbootinit.model.entity.UserInterfaceInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.steadyheart.steadyheartcommon.model.entity.UserInterfaceInfo;
 
 /**
 * @author 李天帅
@@ -17,4 +17,5 @@ public interface UserInterfaceInfoService extends IService<UserInterfaceInfo> {
     Wrapper<UserInterfaceInfo> getQueryWrapper(UserInterfaceInfoQueryRequest userInterfaceInfoQueryRequest);
 
     boolean invokeCount(long userId,long interfaceInfoId);
+
 }

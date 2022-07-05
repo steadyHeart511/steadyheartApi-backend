@@ -12,11 +12,12 @@ spring:
             - StripPrefix=1
 dubbo:
   application:
-    name: dubbo-springboot-consumer
+    name: dubbo-springboot-provider
   protocol:
     name: dubbo
-    port: -1
+    port: 22223
   registry:
+    id: nacos-registry
     address: nacos://localhost:8848
 logging:
   level:

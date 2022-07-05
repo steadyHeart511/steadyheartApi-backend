@@ -3,13 +3,11 @@ package com.steadyheart.steadyheartsdk.client;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.json.JSONUtil;
-import com.steadyheart.steadyheartsdk.entity.User;
 import com.steadyheart.steadyheartsdk.utils.SignUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,23 +24,5 @@ public class SteadyheartClient {
 
     private String secretKey;
 
-    public Map<String,String> headMap(String body) {
-        Map<String,String> map = new HashMap<>();
-        map.put("accessKey",accessKey);
-        map.put("body",body);
-        map.put("sign", SignUtils.sign(secretKey,body));
-        map.put("nonce","1000");
-        map.put("timestamp",String.valueOf(System.currentTimeMillis()));
-        return map;
-    }
-
-    public String getNameByPost (User user) {
-        String json = JSONUtil.toJsonStr(user);
-        HttpResponse response = HttpRequest.post("http://localhost:9090/api/name/user")
-                .addHeaders(headMap(json))
-                .body(json)
-                .execute();
-        return response.body();
-    }
 
 }

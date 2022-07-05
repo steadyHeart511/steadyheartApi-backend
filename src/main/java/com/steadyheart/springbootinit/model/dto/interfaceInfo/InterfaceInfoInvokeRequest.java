@@ -3,6 +3,7 @@ package com.steadyheart.springbootinit.model.dto.interfaceInfo;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @author lts
@@ -20,5 +21,13 @@ public class InterfaceInfoInvokeRequest implements Serializable {
      */
     private String userRequestParams;
 
+    private List<Field> requestParams;
+
     private static final long serialVersionUID = 1L;
+
+    @Data
+    public static class Field {
+        private String fieldName;
+        private String value;
+    }
 }

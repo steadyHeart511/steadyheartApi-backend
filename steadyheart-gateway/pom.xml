@@ -19,6 +19,18 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>com.steadyheart</groupId>
+            <artifactId>steadyheart-common</artifactId>
+            <version>1.0</version>
+            <exclusions>
+                <!--    Gateway本身用WebFlux的方式，而SpringMVC用的是Servlet的方式，二者会发生冲突，需要排除           -->
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo</artifactId>
             <version>3.0.9</version>
@@ -39,6 +51,13 @@
             <groupId>com.steadyheart</groupId>
             <artifactId>steadyheart-sdk</artifactId>
             <version>1.0.3</version>
+            <exclusions>
+                <!--    Gateway本身用WebFlux的方式，而SpringMVC用的是Servlet的方式，二者会发生冲突，需要排除           -->
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>

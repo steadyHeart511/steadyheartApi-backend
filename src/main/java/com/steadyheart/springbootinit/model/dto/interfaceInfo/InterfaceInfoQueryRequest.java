@@ -5,11 +5,12 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 查询请求
  *
- * @author yupi
+ * @author lts
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -41,9 +42,9 @@ public class InterfaceInfoQueryRequest extends PageRequest implements Serializab
     private String requestHeader;
 
     /**
-     * 请求参数
+     * 接口响应参数
      */
-    private String requestParams;
+    private List<ResponseParamsField> responseParams;
 
     /**
      * 响应头

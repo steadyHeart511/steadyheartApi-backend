@@ -1,13 +1,14 @@
 package com.steadyheart.springbootinit.aop;
 
 import com.steadyheart.springbootinit.annotation.AuthCheck;
-import com.steadyheart.springbootinit.common.ErrorCode;
-import com.steadyheart.springbootinit.exception.BusinessException;
-import com.steadyheart.springbootinit.model.entity.User;
+import com.steadyheart.steadyheartcommon.service.common.ErrorCode;
+import com.steadyheart.steadyheartcommon.exception.BusinessException;
 import com.steadyheart.springbootinit.model.enums.UserRoleEnum;
 import com.steadyheart.springbootinit.service.UserService;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+
+import com.steadyheart.steadyheartcommon.model.entity.User;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -21,7 +22,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * 权限校验 AOP
  *
  * @author lts
- * 
+ *
  */
 @Aspect
 @Component

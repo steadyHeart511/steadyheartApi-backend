@@ -1,6 +1,13 @@
 server:
   port: 8083
-steadyheart:
-  client:
-    accessKey: lts
-    secretKey: xx
+#steadyheart:
+#  client:
+#    accessKey: lts
+#    secretKey: xx
+# 自定义属性设置阿里云翻译接口配置
+aliyun:
+  translation:
+    client:
+      accessKey: LTAI5tBUv3zJZAxVLHrCPx6q
+      secretKey: mC7wZ7tNuCNd70j4ccUuV0cmyDD1Tz
+

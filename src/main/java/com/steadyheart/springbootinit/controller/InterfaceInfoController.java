@@ -1,24 +1,27 @@
 package com.steadyheart.springbootinit.controller;
 
-import java.util.Date;
-
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import com.steadyheart.springbootinit.annotation.AuthCheck;
 import com.steadyheart.springbootinit.common.*;
-import com.steadyheart.springbootinit.constant.UserConstant;
-import com.steadyheart.springbootinit.exception.BusinessException;
-import com.steadyheart.springbootinit.exception.ThrowUtils;
-import com.steadyheart.springbootinit.model.dto.interfaceInfo.InterfaceInfoAddRequest;
-import com.steadyheart.springbootinit.model.dto.interfaceInfo.InterfaceInfoInvokeRequest;
-import com.steadyheart.springbootinit.model.dto.interfaceInfo.InterfaceInfoQueryRequest;
-import com.steadyheart.springbootinit.model.dto.interfaceInfo.InterfaceInfoUpdateRequest;
-import com.steadyheart.springbootinit.model.entity.InterfaceInfo;
-import com.steadyheart.springbootinit.model.entity.User;
+import com.steadyheart.springbootinit.model.dto.interfaceInfo.*;
+import com.steadyheart.steadyheartcommon.service.common.BaseResponse;
+import com.steadyheart.steadyheartcommon.service.common.ErrorCode;
+import com.steadyheart.steadyheartcommon.service.common.ResultUtils;
+import com.steadyheart.steadyheartcommon.exception.BusinessException;
+import com.steadyheart.steadyheartcommon.exception.ThrowUtils;
 import com.steadyheart.springbootinit.model.enums.InterfaceInfoEnum;
 import com.steadyheart.springbootinit.service.InterfaceInfoService;
 import com.steadyheart.springbootinit.service.UserService;
+import com.steadyheart.steadyheartcommon.model.entity.InterfaceInfo;
+import com.steadyheart.steadyheartcommon.model.entity.User;
 import com.steadyheart.steadyheartsdk.client.SteadyheartClient;
+import com.steadyheart.steadyheartsdk.entity.request.CurrencyRequest;
+import com.steadyheart.steadyheartsdk.service.ApiService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -27,6 +30,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import static com.steadyheart.springbootinit.constant.UserConstant.ADMIN_ROLE;
 
 /**
  * 帖子接口
@@ -48,6 +54,9 @@ public class InterfaceInfoController {
     @Resource
     private SteadyheartClient steadyheartClient;
 
+    @Resource
+    private ApiService apiService;
+
     private final static Gson GSON = new Gson();
 
     // region 增删改查
@@ -60,12 +69,51 @@ public class InterfaceInfoController {
      * @return
      */
     @PostMapping("/add")
+    @AuthCheck(mustRole = ADMIN_ROLE)
     public BaseResponse<Long> addInterfaceInfo(@RequestBody InterfaceInfoAddRequest interfaceInfoAddRequest, HttpServletRequest request) {
+
+        //  非空校验
         if (interfaceInfoAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         InterfaceInfo interfaceInfo = new InterfaceInfo();
+
+        //  将获取到的请求参数转为json
+        if (CollUtil.isNotEmpty(interfaceInfoAddRequest.getRequestParams())) {
+            List<RequestParamsField> fields = interfaceInfoAddRequest.getRequestParams()
+                    .stream()
+                    .filter(field -> StringUtils.isNoneBlank(field.getFieldName(), field.getType(), field.getRequired()))
+                    .map(field -> {
+                        field.setFieldName(field.getFieldName().trim());
+                        if (StringUtils.isNotBlank(field.getDesc())) {
+                            field.setDesc(field.getDesc().trim());
+                        }
+                        return field;
+                    })
+                    .collect(Collectors.toList());
+            interfaceInfo.setRequestParams(JSONUtil.toJsonStr(fields));
+        }
+
+        //  将获取到的响应参数转为json
+        if (CollUtil.isNotEmpty(interfaceInfoAddRequest.getResponseParams())) {
+            List<ResponseParamsField> fields = interfaceInfoAddRequest.getResponseParams()
+                    .stream()
+                    .filter(field -> StringUtils.isNoneBlank(field.getFieldName(), field.getType()))
+                    .map(field -> {
+                        field.setFieldName(field.getFieldName().trim());
+                        if (StringUtils.isNotBlank(field.getDesc())) {
+                            field.setDesc(field.getDesc().trim());
+                        }
+                        return field;
+                    })
+                    .collect(Collectors.toList());
+            interfaceInfo.setResponseParams(JSONUtil.toJsonStr(fields));
+        }
+
+        //  复制数据
         BeanUtils.copyProperties(interfaceInfoAddRequest, interfaceInfo);
+
+        //  校验参数
         interfaceInfoService.validInterfaceInfo(interfaceInfo, true);
         User loginUser = userService.getLoginUser(request);
         interfaceInfo.setUserId(loginUser.getId());
@@ -83,6 +131,7 @@ public class InterfaceInfoController {
      * @return
      */
     @PostMapping("/delete")
+    @AuthCheck(mustRole = ADMIN_ROLE)
     public BaseResponse<Boolean> deleteInterfaceInfo(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -92,10 +141,6 @@ public class InterfaceInfoController {
         // 判断是否存在
         InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
         ThrowUtils.throwIf(oldInterfaceInfo == null, ErrorCode.NOT_FOUND_ERROR);
-        // 仅本人或管理员可删除
-        if (!oldInterfaceInfo.getUserId().equals(user.getId()) && !userService.isAdmin(request)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
         boolean b = interfaceInfoService.removeById(id);
         return ResultUtils.success(b);
     }
@@ -107,11 +152,43 @@ public class InterfaceInfoController {
      * @return
      */
     @PostMapping("/update")
+    @AuthCheck(mustRole = ADMIN_ROLE)
     public BaseResponse<Boolean> updateInterfaceInfo(@RequestBody InterfaceInfoUpdateRequest interfaceInfoUpdateRequest) {
         if (interfaceInfoUpdateRequest == null || interfaceInfoUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         InterfaceInfo interfaceInfo = new InterfaceInfo();
+        //  将获取到的请求参数转为json
+        if (CollUtil.isNotEmpty(interfaceInfoUpdateRequest.getRequestParams())) {
+            List<RequestParamsField> fields = interfaceInfoUpdateRequest.getRequestParams()
+                    .stream()
+                    .filter(field -> StringUtils.isNoneBlank(field.getFieldName(), field.getType(), field.getRequired()))
+                    .map(field -> {
+                        field.setFieldName(field.getFieldName().trim());
+                        if (StringUtils.isNotBlank(field.getDesc())) {
+                            field.setDesc(field.getDesc().trim());
+                        }
+                        return field;
+                    })
+                    .collect(Collectors.toList());
+            interfaceInfo.setRequestParams(JSONUtil.toJsonStr(fields));
+        }
+
+        //  将获取到的响应参数转为json
+        if (CollUtil.isNotEmpty(interfaceInfoUpdateRequest.getResponseParams())) {
+            List<ResponseParamsField> fields = interfaceInfoUpdateRequest.getResponseParams()
+                    .stream()
+                    .filter(field -> StringUtils.isNoneBlank(field.getFieldName(), field.getType()))
+                    .map(field -> {
+                        field.setFieldName(field.getFieldName().trim());
+                        if (StringUtils.isNotBlank(field.getDesc())) {
+                            field.setDesc(field.getDesc().trim());
+                        }
+                        return field;
+                    })
+                    .collect(Collectors.toList());
+            interfaceInfo.setResponseParams(JSONUtil.toJsonStr(fields));
+        }
         BeanUtils.copyProperties(interfaceInfoUpdateRequest, interfaceInfo);
         // 参数校验
         interfaceInfoService.validInterfaceInfo(interfaceInfo, false);
@@ -140,12 +217,6 @@ public class InterfaceInfoController {
         Long id = idRequest.getId();
         InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
         ThrowUtils.throwIf(oldInterfaceInfo == null,ErrorCode.PARAMS_ERROR,"接口id不存在");
-        //  判断接口是否可以调用
-        com.steadyheart.steadyheartsdk.entity.User user = new com.steadyheart.steadyheartsdk.entity.User("test");
-        String name = steadyheartClient.getNameByPost(user);
-        if (StringUtils.isBlank(name)) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"接口验证失败");
-        }
         InterfaceInfo interfaceInfo = new InterfaceInfo();
         interfaceInfo.setId(id);
         interfaceInfo.setStatus(InterfaceInfoEnum.ONLINE.getValue());
@@ -189,7 +260,6 @@ public class InterfaceInfoController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long id = interfaceInfoInvokeRequest.getId();
-        String userRequestParams = interfaceInfoInvokeRequest.getUserRequestParams();
         InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
@@ -197,20 +267,35 @@ public class InterfaceInfoController {
         if (oldInterfaceInfo.getStatus().equals(InterfaceInfoEnum.OFFLINE.getValue())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "接口已关闭");
         }
+        List<InterfaceInfoInvokeRequest.Field> requestParams = interfaceInfoInvokeRequest.getRequestParams();
+        String requestParamsJson = "{}";
+
+        //  有参数取出来构建成json对象
+        JsonObject jsonObject = new JsonObject();
+        if (!CollUtil.isEmpty(requestParams)) {
+            requestParams.stream().forEach(requestParam -> {
+                jsonObject.addProperty(requestParam.getFieldName(),requestParam.getValue());
+            });
+            //  转为json字符串
+            requestParamsJson = new Gson().toJson(jsonObject);
+        }
+        //  转为map
+        Map<String, Object> params = new Gson().fromJson(requestParamsJson, new TypeToken<Map<String, Object>>() {
+        }.getType());
+        //  通用请求参数
+        CurrencyRequest currencyRequest = new CurrencyRequest();
+        currencyRequest.setPath(oldInterfaceInfo.getUrl());
+        currencyRequest.setMethod(oldInterfaceInfo.getMethod());
+        currencyRequest.setRequestParams(params);
         // 获取当前登录用户的ak和sk，这样相当于用户自己的这个身份去调用，
         // 也不会担心它刷接口，因为知道是谁刷了这个接口，会比较安全
         User loginUser = userService.getLoginUser(request);
         String accessKey = loginUser.getAccessKey();
         String secretKey = loginUser.getSecretKey();
-        // 我们只需要进行测试调用，所以我们需要解析传递过来的参数。
-        Gson gson = new Gson();
-        // 将用户请求参数转换为com.yupi.yuapiclientsdk.model.User对象
-        com.steadyheart.steadyheartsdk.entity.User user = gson.fromJson(userRequestParams, com.steadyheart.steadyheartsdk.entity.User.class);
-        // 调用SteadyheartClient的getUsernameByPost方法，传入用户对象，获取用户名
         SteadyheartClient temp = new SteadyheartClient(accessKey,secretKey);
-        String usernameByPost = temp.getNameByPost(user);
+        com.steadyheart.steadyheartsdk.entity.response.BaseResponse result = apiService.request(temp, currencyRequest);
         // 返回成功响应，并包含调用结果
-        return ResultUtils.success(usernameByPost);
+        return ResultUtils.success(result);
     }
 
     /**
@@ -240,11 +325,14 @@ public class InterfaceInfoController {
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<InterfaceInfo>> listInterfaceInfoByPage(@RequestBody InterfaceInfoQueryRequest interfaceInfoQueryRequest,
-                                                                         HttpServletRequest request) {
+                                                                     HttpServletRequest request) {
+        if (interfaceInfoQueryRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
         long current = interfaceInfoQueryRequest.getCurrent();
         long size = interfaceInfoQueryRequest.getPageSize();
         // 限制爬虫
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(size > 50, ErrorCode.PARAMS_ERROR);
         Page<InterfaceInfo> interfaceInfoPage = interfaceInfoService.page(new Page<>(current, size),
                 interfaceInfoService.getQueryWrapper(interfaceInfoQueryRequest));
         return ResultUtils.success(interfaceInfoPage);

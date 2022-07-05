@@ -3,6 +3,7 @@ package com.steadyheart.springbootinit.model.dto.interfaceInfo;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 创建请求
@@ -13,39 +14,49 @@ import java.io.Serializable;
 public class InterfaceInfoAddRequest implements Serializable {
 
     /**
-     * 名称
+     * 接口名称
      */
     private String name;
-
     /**
-     * 描述
+     * 返回格式
      */
-    private String description;
-
+    private String returnFormat;
     /**
      * 接口地址
      */
     private String url;
-
+    /**
+     * 接口响应参数
+     */
+    private List<ResponseParamsField> responseParams;
+    /**
+     * 请求方法
+     */
+    private String method;
+    /**
+     * 减少积分个数
+     */
+    private Integer reduceScore;
+    /**
+     * 接口请求参数
+     */
+    private List<RequestParamsField> requestParams;
+    /**
+     * 描述信息
+     */
+    private String description;
+    /**
+     * 请求示例
+     */
+    private String requestExample;
     /**
      * 请求头
      */
     private String requestHeader;
-
-    /**
-     * 请求参数
-     */
-    private String requestParams;
-
     /**
      * 响应头
      */
     private String responseHeader;
-
-    /**
-     * 请求类型
-     */
-    private String method;
 
 }
 

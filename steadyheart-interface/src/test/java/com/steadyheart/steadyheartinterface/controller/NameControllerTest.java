@@ -1,13 +1,10 @@
 package com.steadyheart.steadyheartinterface.controller;
 
 import com.steadyheart.steadyheartsdk.client.SteadyheartClient;
-import com.steadyheart.steadyheartsdk.entity.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author lts
@@ -21,7 +18,7 @@ class NameControllerTest {
 
     @Test
     void getUserByPost() {
-        System.out.println(steadyheartClient.getNameByPost(new User("yy")));
+        // System.out.println(steadyheartClient.getNameByPost(new User("yy")));
 
     }
 }
